@@ -39,12 +39,15 @@ namespace LB_Command_Prompt
             cmdProcess.StartInfo.FileName = @"C:\Windows\System32\cmd.exe";
             cmdProcess.StartInfo.RedirectStandardInput = true;
             cmdProcess.StartInfo.RedirectStandardOutput = true;
+            cmdProcess.StartInfo.RedirectStandardError = true; // Redirect standard error
             cmdProcess.StartInfo.CreateNoWindow = true;
             cmdProcess.StartInfo.UseShellExecute = false;
             cmdProcess.OutputDataReceived += CmdProcess_OutputDataReceived;
+            cmdProcess.ErrorDataReceived += CmdProcess_ErrorDataReceived; // Handle error output
 
             cmdProcess.Start();
             cmdProcess.BeginOutputReadLine();
+            cmdProcess.BeginErrorReadLine(); // Begin reading from error output
 
             //cmdProcess.StandardInput.WriteLine("echo Hello World!");   // Example command
             //cmdProcess.StandardInput.WriteLine("exit"); // Sends the exit command to the cmd
@@ -60,19 +63,25 @@ namespace LB_Command_Prompt
             cmdPrintString(e.Data);
         }
 
+        private void CmdProcess_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            cmdPrintString(e.Data);
+        }
+
         public void PrintChar(char c)
         {
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
 
             richTextBox1.AppendText(c.ToString());
 
-            if (c.Equals('\n'))
+            if (c.Equals('\n') && command != "")
             {
                 cmdProcess.StandardInput.WriteLine(command);
                 cmdProcess.StandardInput.WriteLine("");
 
                 command = "";
             }
+            else if (c.Equals('\n') && command == "") cmdProcess.StandardInput.WriteLine("");
             else command = command + c;
 
             richTextBox1.Select(richTextBox1.Text.Length, 0);
@@ -131,16 +140,11 @@ namespace LB_Command_Prompt
 
             switch (e.KeyCode)
             {
-                case Keys.Home:
-                    PrintString("\n");
-                    cmdProcess.StandardInput.WriteLine("");
-                    e.SuppressKeyPress = true;
-                    break;
                 case Keys.Back:
                     SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
                     if (richTextBox1.Text.Length >= 1) richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1, 1);
-                    if (command.Length >= 1) command = command.Remove(command.Length, 1);
-                    richTextBox1.Select(richTextBox1.Text.Length - 1, 0);
+                    if (command.Length >= 1) command = command.Remove(command.Length - 1, 1);
+                    richTextBox1.Select(richTextBox1.Text.Length, 0);
                     richTextBox1.ScrollToCaret();
                     SendMessage(richTextBox1.Handle, WM_VSCROLL, SB_LINEDOWN, 0);
                     SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
