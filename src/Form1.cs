@@ -95,8 +95,6 @@ namespace LB_Command_Prompt
         public void PrintString(string s)
         {
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
-            
-            string[] lines = richTextBox1.Text.Split('\n');
 
             richTextBox1.AppendText(s);
 
@@ -112,16 +110,12 @@ namespace LB_Command_Prompt
         {
             try
             {
-                if (s.EndsWith(">")) richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s });
+                if (s.Contains(@"\") && s.EndsWith(">")) richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s });
+                else if (s.Contains(@"\") && s.Contains(">")) { }
                 else richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s + '\n' });
             }
             catch (NullReferenceException) { }
         }
-
-        /*public string[] cmdGetLines()
-        {
-            return richTextBox1.Text.Split('\n');
-        }*/
 
         private void richTextBox1_KeyPress(object sender, KeyPressEventArgs e)
         {
