@@ -9,11 +9,17 @@ using System.Windows.Forms;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using System.Runtime.InteropServices;
 
 namespace LB_Command_Prompt
 {
     public partial class Form1 : Form
     {
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, Int32 lParam);
+
+        private const int WM_SETREDRAW = 11;
+
         Process cmdProcess;
 
         string command = "";
@@ -52,7 +58,16 @@ namespace LB_Command_Prompt
 
         public void PrintChar(char c)
         {
-            richTextBox1.Text = richTextBox1.Text + c;
+            SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
+
+            // Remove the last character
+            if (richTextBox1.Text.Length > 0)
+            {
+                richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1);
+            }
+
+            // Update text
+            richTextBox1.Text = richTextBox1.Text + c + '\n';
 
             if (c.Equals('\n')) 
             { 
@@ -62,16 +77,35 @@ namespace LB_Command_Prompt
                 command = "";
             }
             else command = command + c;
-            richTextBox1.Select(richTextBox1.Text.Length /*- caretOffset*/, 0);
+
+            richTextBox1.Select(richTextBox1.Text.Length - 1 /*- caretOffset*/, 0);
             richTextBox1.ScrollToCaret();
+
+            SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
+            richTextBox1.Refresh();
         }
 
         
         public void PrintString(string s)
         {
-            richTextBox1.Text = richTextBox1.Text + s;
-            richTextBox1.Select(richTextBox1.Text.Length /*- caretOffset*/, 0);
+            SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
+
+            // Remove the last character
+            if (richTextBox1.Text.Length > 0)
+            {
+                richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1);
+            }
+
+            // Update text
+            richTextBox1.Text = richTextBox1.Text + s + '\n';
+
+            //richTextBox1.Text = richTextBox1.Text + s;
+
+            richTextBox1.Select(richTextBox1.Text.Length - 1 /*- caretOffset*/, 0);
             richTextBox1.ScrollToCaret();
+
+            SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
+            richTextBox1.Refresh();
         }
 
         public void cmdPrintString(string s)
@@ -95,9 +129,6 @@ namespace LB_Command_Prompt
 
             /*if (caretOffset == 0)*/ PrintChar(c);
             /*else richTextBox1.Text = richTextBox1.Text.Insert(richTextBox1.Text.Length - caretOffset, c.ToString());*/
-
-            richTextBox1.Select(richTextBox1.Text.Length /*- caretOffset*/, 0);
-            richTextBox1.ScrollToCaret();
         }
 
         private void richTextBox1_KeyDown(object sender, KeyEventArgs e)
