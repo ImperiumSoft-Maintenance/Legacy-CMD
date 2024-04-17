@@ -17,8 +17,6 @@ namespace LB_Command_Prompt
             Application.SetCompatibleTextRenderingDefault(false);
             Form1 cmd = new Form1();
             Application.Run(cmd);
-
-            cmd.DrawChar('a', 0, 0);
         }
     }
 }
