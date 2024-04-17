@@ -18,6 +18,10 @@ namespace LB_Command_Prompt
         [DllImport("user32.dll")]
         public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, Int32 lParam);
 
+        private const int WM_VSCROLL = 0x115;
+        private const bool SB_LINEUP = false;
+        private const bool SB_LINEDOWN = true;
+
         private const int WM_SETREDRAW = 11;
 
         Process cmdProcess;
@@ -60,17 +64,10 @@ namespace LB_Command_Prompt
         {
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
 
-            // Remove the last character
-            if (richTextBox1.Text.Length > 0)
+            richTextBox1.AppendText(c.ToString());
+
+            if (c.Equals('\n'))
             {
-                richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1);
-            }
-
-            // Update text
-            richTextBox1.Text = richTextBox1.Text + c + '\n';
-
-            if (c.Equals('\n')) 
-            { 
                 cmdProcess.StandardInput.WriteLine(command);
                 cmdProcess.StandardInput.WriteLine("");
 
@@ -78,31 +75,25 @@ namespace LB_Command_Prompt
             }
             else command = command + c;
 
-            richTextBox1.Select(richTextBox1.Text.Length - 1 /*- caretOffset*/, 0);
+            richTextBox1.Select(richTextBox1.Text.Length, 0);
             richTextBox1.ScrollToCaret();
+            SendMessage(richTextBox1.Handle, WM_VSCROLL, SB_LINEDOWN, 0);
 
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
             richTextBox1.Refresh();
         }
 
-        
         public void PrintString(string s)
         {
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
+            
+            string[] lines = richTextBox1.Text.Split('\n');
 
-            // Remove the last character
-            if (richTextBox1.Text.Length > 0)
-            {
-                richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1);
-            }
+            richTextBox1.AppendText(s);
 
-            // Update text
-            richTextBox1.Text = richTextBox1.Text + s + '\n';
-
-            //richTextBox1.Text = richTextBox1.Text + s;
-
-            richTextBox1.Select(richTextBox1.Text.Length - 1 /*- caretOffset*/, 0);
+            richTextBox1.Select(richTextBox1.Text.Length, 0);
             richTextBox1.ScrollToCaret();
+            SendMessage(richTextBox1.Handle, WM_VSCROLL, SB_LINEDOWN, 0);
 
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
             richTextBox1.Refresh();
@@ -110,10 +101,12 @@ namespace LB_Command_Prompt
 
         public void cmdPrintString(string s)
         {
-            //string[] richText = (string[])richTextBox1.Invoke(new Func<string[]>(cmdGetLines));
-
-            if (s.EndsWith(">")) richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s });
-            else richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s + '\n' });
+            try
+            {
+                if (s.EndsWith(">")) richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s });
+                else richTextBox1.Invoke(new Action<string>(PrintString), new object[] { s + '\n' });
+            }
+            catch (NullReferenceException) { }
         }
 
         /*public string[] cmdGetLines()
@@ -144,8 +137,14 @@ namespace LB_Command_Prompt
                     e.SuppressKeyPress = true;
                     break;
                 case Keys.Back:
-                    if (richTextBox1.Text.Length >= 1) richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1 /*- caretOffset*/, 1);
-                    if (command.Length >= 1) command = command.Remove(command.Length - 1, 1);
+                    SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
+                    if (richTextBox1.Text.Length >= 1) richTextBox1.Text = richTextBox1.Text.Remove(richTextBox1.Text.Length - 1, 1);
+                    if (command.Length >= 1) command = command.Remove(command.Length, 1);
+                    richTextBox1.Select(richTextBox1.Text.Length - 1, 0);
+                    richTextBox1.ScrollToCaret();
+                    SendMessage(richTextBox1.Handle, WM_VSCROLL, SB_LINEDOWN, 0);
+                    SendMessage(richTextBox1.Handle, WM_SETREDRAW, true, 0);
+                    richTextBox1.Refresh();
                     e.SuppressKeyPress = true;
                     break;
                 case Keys.Enter:
