@@ -31,6 +31,8 @@ namespace LB_Command_Prompt
         //int lineOffset = 0;
         //int caretOffset = 0;
 
+        int charLimit = 273000;
+
         public Form1()
         {
             InitializeComponent();
@@ -84,6 +86,12 @@ namespace LB_Command_Prompt
             else if (c.Equals('\n') && command == "") cmdProcess.StandardInput.WriteLine("");
             else command = command + c;
 
+            if (richTextBox1.Text.Length > charLimit)
+            {
+                int overflow = richTextBox1.Text.Length - charLimit;
+                richTextBox1.Text = richTextBox1.Text.Remove(0, overflow);
+            }
+
             richTextBox1.Select(richTextBox1.Text.Length, 0);
             richTextBox1.ScrollToCaret();
             SendMessage(richTextBox1.Handle, WM_VSCROLL, SB_LINEDOWN, 0);
@@ -97,6 +105,12 @@ namespace LB_Command_Prompt
             SendMessage(richTextBox1.Handle, WM_SETREDRAW, false, 0);
 
             richTextBox1.AppendText(s);
+
+            if (richTextBox1.Text.Length > charLimit)
+            {
+                int overflow = richTextBox1.Text.Length - charLimit;
+                richTextBox1.Text = richTextBox1.Text.Remove(0, overflow);
+            }
 
             richTextBox1.Select(richTextBox1.Text.Length, 0);
             richTextBox1.ScrollToCaret();
